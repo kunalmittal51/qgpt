@@ -9,13 +9,23 @@ import java.util.stream.Collectors;
 
 @Service
 public class SampleDataService {
-    private final JdbcTemplate jdbcTemplate;
     private static final int SAMPLE_LIMIT = 5;  // Limit per table
+    private final JdbcTemplate jdbcTemplate;
 
+    /***
+     * Constructs an instance of SampleDataService.
+     *
+     * @param jdbcTemplate the JdbcTemplate to be used for fetching sample data
+     */
     public SampleDataService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /***
+     * Fetches sample data from the database.
+     *
+     * @return a string containing sample data from the database
+     */
     public String getSampleData() {
         try {
             // Get all table names
@@ -33,6 +43,12 @@ public class SampleDataService {
         }
     }
 
+    /***
+     * Fetches sample rows for a given table.
+     *
+     * @param tableName the name of the table
+     * @return a string containing sample rows for the table
+     */
     private String fetchSampleRows(String tableName) {
         try {
             // Fetch SAMPLE_LIMIT rows

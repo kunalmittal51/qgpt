@@ -8,6 +8,9 @@ import java.util.regex.Pattern;
 
 
 public class SQLResponseParser {
+    private SQLResponseParser() {
+       throw new IllegalStateException("Utility class");
+    }
 
     public static ModelResponse extractThinkAndSQL(Mono<String> response) {
         String responseString = response.block();

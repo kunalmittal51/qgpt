@@ -18,11 +18,15 @@ public class QueryController {
     public QueryController(
             LLMService llmService,
             QueryExecutionService queryExecutionService
-            ) {
+    ) {
         this.llmService = llmService;
         this.queryExecutionService = queryExecutionService;
     }
 
+    /***
+     * Health check endpoint
+     * @return a response indicating the service is healthy
+     */
     @GetMapping
     public QueryResponse health() {
         return QueryResponse.builder()
@@ -30,6 +34,11 @@ public class QueryController {
                 .build();
     }
 
+    /***
+     * Endpoint to execute a natural language query
+     * @param request the query request
+     * @return a response containing the model response and query results
+     */
     @PostMapping("/executeQuery")
     public QueryResponse executeNaturalLanguageQuery(@RequestBody QueryRequest request) {
         // Get the SQL query from LLM asynchronously
@@ -44,5 +53,4 @@ public class QueryController {
                 .results(queryExecutionService.executeQuery(modelResponse.getQuery()))
                 .build();
     }
-
 }

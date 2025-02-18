@@ -15,15 +15,26 @@ public class QueryExecutionService {
 
     private final JdbcTemplate jdbcTemplate;
 
+    /**
+     * Constructs an instance of QueryExecutionService.
+     *
+     * @param jdbcTemplate the JdbcTemplate to be used for executing queries
+     */
     public QueryExecutionService(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * Executes the given SQL query and returns the results.
+     *
+     * @param sqlQuery the SQL query to execute
+     * @param params   the parameters to be used in the query
+     * @return the results of the query
+     */
     public List<Map<String, Object>> executeQuery(String sqlQuery, Object... params) {
         // Blocking call to extract String from Mono
 
         validateQuery(sqlQuery); // Validate to ensure safety
-        System.out.println("Executing query: " + sqlQuery);
         return jdbcTemplate.queryForList(sqlQuery, params); // Safe execution
     }
 

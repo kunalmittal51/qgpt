@@ -22,6 +22,9 @@ public class SchemaService {
         loadSchema();
     }
 
+    /***
+     * Loads the database schema into the schema cache.
+     */
     private void loadSchema() {
         try (var connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
@@ -45,6 +48,11 @@ public class SchemaService {
         }
     }
 
+    /***
+     * Generates a textual representation of the database schema.
+     *
+     * @return a string containing the database schema
+     */
     public String generateSchemaContext() {
         StringBuilder context = new StringBuilder();
         context.append("Database Schema:\n\n");

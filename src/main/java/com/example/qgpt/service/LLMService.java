@@ -1,5 +1,6 @@
 package com.example.qgpt.service;
 
+import com.example.qgpt.utils.LLMUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -8,12 +9,17 @@ import java.util.Map;
 
 @Service
 public class LLMService {
-    private static final String MODEL = "mistral";
-
     private final SchemaService schemaService;
-    private final SampleDataService sampleDataService;  // New Service for Sample Data
+    private final SampleDataService sampleDataService;  // Service for Sample Data
     private final WebClient webClient;
 
+
+    /**
+     * Constructs an instance of LLMService.
+     *
+     * @param schemaService     the service to generate schema context
+     * @param sampleDataService the service to fetch sample data
+     */
     public LLMService(SchemaService schemaService, SampleDataService sampleDataService) {
         this.schemaService = schemaService;
         this.sampleDataService = sampleDataService;
@@ -22,15 +28,21 @@ public class LLMService {
                 .build();
     }
 
+    /**
+     * Generates an SQL query from a natural language query using the LLM model.
+     *
+     * @param naturalLanguageQuery the natural language query
+     * @return a Mono emitting the generated SQL query
+     */
     public Mono<String> generateSqlQuery(String naturalLanguageQuery) {
         String schemaContext = schemaService.generateSchemaContext();
         String sampleData = sampleDataService.getSampleData();  // Fetch sample rows
 
         // Construct system message with schema & sample data
-        String systemMessage = createSystemMessage(schemaContext, sampleData);
+        String systemMessage = LLMUtils.createSystemMessage(schemaContext, sampleData);
 
         // Construct request body
-        Map<String, Object> requestBody = getStringObjectMap(naturalLanguageQuery, systemMessage);
+        Map<String, Object> requestBody = LLMUtils.getStringObjectMap(naturalLanguageQuery, systemMessage);
 
         return webClient.post()
                 .uri("/api/chat")
@@ -46,32 +58,4 @@ public class LLMService {
                 .onErrorResume(e -> Mono.just("Error generating SQL query: " + e.getMessage()));
     }
 
-    private static Map<String, Object> getStringObjectMap(String naturalLanguageQuery, String systemMessage) {
-        Map<String, Object> requestBody = Map.of(
-                "model", MODEL,
-                "temperature", 0,
-                "messages", new Object[]{
-                        Map.of("role", "system", "content", systemMessage),
-                        Map.of("role", "user", "content", naturalLanguageQuery)
-                }
-        );
-        return requestBody;
-    }
-
-    private String createSystemMessage(String schemaContext, String sampleData) {
-        return String.format(
-                """
-                        You are a SQL query generator. Given the following database schema:
-                        
-                        %s
-                        
-                        Here are some sample rows from the database:
-                        
-                        %s
-                        
-                        Generate an executable SQL query for MySQL based on the user's request. \
-                        Return ONLY the SQL query without any explanations or additional text.""",
-                schemaContext, sampleData
-        );
-    }
 }
