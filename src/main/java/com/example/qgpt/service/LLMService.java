@@ -63,12 +63,4 @@ public class LLMService {
                 .map(sql -> sql.replaceAll("```sql", "").replaceAll("```", "").trim()) // Cleanup formatting
                 .onErrorResume(e -> Mono.just("Error generating SQL query: " + e.getMessage()));
     }
-
-    private String cleanSQLResponse(String sql) {
-        if (sql == null) return "Error: Empty response from LLM";
-
-        return sql.replaceAll("```sql", "")
-                .replaceAll("```", "")
-                .trim();
-    }
 }
