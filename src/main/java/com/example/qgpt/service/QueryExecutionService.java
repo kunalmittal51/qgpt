@@ -24,6 +24,7 @@ public class QueryExecutionService {
         String sqlQuery = sqlMono.block(); // Blocking call to extract String from Mono
 
         validateQuery(sqlQuery); // Validate to ensure safety
+        System.out.println("Executing query: " + sqlQuery);
         return jdbcTemplate.queryForList(sqlQuery, params); // Safe execution
     }
 

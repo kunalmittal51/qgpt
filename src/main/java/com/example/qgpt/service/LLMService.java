@@ -1,6 +1,5 @@
 package com.example.qgpt.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -12,7 +11,6 @@ public class LLMService {
     private final SchemaService schemaService;
     private final SampleDataService sampleDataService;  // New Service for Sample Data
     private final WebClient webClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public LLMService(SchemaService schemaService, SampleDataService sampleDataService) {
         this.schemaService = schemaService;
@@ -42,13 +40,6 @@ public class LLMService {
                         Map.of("role", "user", "content", naturalLanguageQuery)
                 }
         );
-
-        try {
-            String s =  objectMapper.writeValueAsString(requestBody);
-            System.out.println(s);
-        } catch (Exception e){
-            System.out.println(e);
-        }
 
         return webClient.post()
                 .uri("/api/chat")
