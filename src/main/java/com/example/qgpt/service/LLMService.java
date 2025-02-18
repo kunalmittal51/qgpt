@@ -1,5 +1,6 @@
 package com.example.qgpt.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -9,29 +10,46 @@ import java.util.Map;
 @Service
 public class LLMService {
     private final SchemaService schemaService;
+    private final SampleDataService sampleDataService;  // New Service for Sample Data
     private final WebClient webClient;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public LLMService(SchemaService schemaService) {
+    public LLMService(SchemaService schemaService, SampleDataService sampleDataService) {
         this.schemaService = schemaService;
+        this.sampleDataService = sampleDataService;
         this.webClient = WebClient.builder()
-                .baseUrl("http://localhost:11434")  // Ollama's default API endpoint
+                .baseUrl("http://localhost:11434")  // Ollama API endpoint
                 .build();
     }
 
     public Mono<String> generateSqlQuery(String naturalLanguageQuery) {
+        String schemaContext = schemaService.generateSchemaContext();
+        String sampleData = sampleDataService.getSampleData();  // Fetch sample rows
+
+        // Construct system message with schema & sample data
+        String systemMessage = String.format(
+                "You are a SQL query generator. Given the following database schema:\n\n%s\n\n" +
+                        "Here are some sample rows from the database:\n\n%s\n\n" +
+                        "Generate an executable SQL query for MySQL based on the user's request. " +
+                        "Return ONLY the SQL query without any explanations or additional text.",
+                schemaContext, sampleData
+        );
+
         Map<String, Object> requestBody = Map.of(
                 "model", "mistral",
                 "messages", new Object[]{
-                        Map.of("role", "system", "content",
-                                "You are a SQL query generator. Given the following schema:\n\n" +
-                                        schemaService.generateSchemaContext() +
-                                        "\nGenerate only the SQL query without any explanation and query should be executable " +
-                                        "with the provided schema."),
+                        Map.of("role", "system", "content", systemMessage),
                         Map.of("role", "user", "content", naturalLanguageQuery)
                 }
         );
 
-        // Handle streaming response
+        try {
+            String s =  objectMapper.writeValueAsString(requestBody);
+            System.out.println(s);
+        } catch (Exception e){
+            System.out.println(e);
+        }
+
         return webClient.post()
                 .uri("/api/chat")
                 .bodyValue(requestBody)
@@ -44,5 +62,13 @@ public class LLMService {
                 .map(parts -> String.join("", parts)) // Combine all parts into one query
                 .map(sql -> sql.replaceAll("```sql", "").replaceAll("```", "").trim()) // Cleanup formatting
                 .onErrorResume(e -> Mono.just("Error generating SQL query: " + e.getMessage()));
+    }
+
+    private String cleanSQLResponse(String sql) {
+        if (sql == null) return "Error: Empty response from LLM";
+
+        return sql.replaceAll("```sql", "")
+                .replaceAll("```", "")
+                .trim();
     }
 }
