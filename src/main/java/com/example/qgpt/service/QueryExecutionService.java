@@ -2,7 +2,6 @@ package com.example.qgpt.service;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Map;
@@ -20,8 +19,8 @@ public class QueryExecutionService {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public List<Map<String, Object>> executeQuery(Mono<String> sqlMono, Object... params) {
-        String sqlQuery = sqlMono.block(); // Blocking call to extract String from Mono
+    public List<Map<String, Object>> executeQuery(String sqlQuery, Object... params) {
+        // Blocking call to extract String from Mono
 
         validateQuery(sqlQuery); // Validate to ensure safety
         System.out.println("Executing query: " + sqlQuery);

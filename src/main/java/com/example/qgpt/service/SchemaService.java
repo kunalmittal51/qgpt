@@ -14,7 +14,7 @@ import java.util.Map;
 @Service
 public class SchemaService {
     private final DataSource dataSource;
-    private Map<String, List<String>> schemaCache;
+    private final Map<String, List<String>> schemaCache;
 
     public SchemaService(DataSource dataSource) {
         this.dataSource = dataSource;

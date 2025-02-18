@@ -8,6 +8,8 @@ import java.util.Map;
 
 @Service
 public class LLMService {
+    private static final String MODEL = "mistral";
+
     private final SchemaService schemaService;
     private final SampleDataService sampleDataService;  // New Service for Sample Data
     private final WebClient webClient;
@@ -25,21 +27,10 @@ public class LLMService {
         String sampleData = sampleDataService.getSampleData();  // Fetch sample rows
 
         // Construct system message with schema & sample data
-        String systemMessage = String.format(
-                "You are a SQL query generator. Given the following database schema:\n\n%s\n\n" +
-                        "Here are some sample rows from the database:\n\n%s\n\n" +
-                        "Generate an executable SQL query for MySQL based on the user's request. " +
-                        "Return ONLY the SQL query without any explanations or additional text.",
-                schemaContext, sampleData
-        );
+        String systemMessage = createSystemMessage(schemaContext, sampleData);
 
-        Map<String, Object> requestBody = Map.of(
-                "model", "mistral",
-                "messages", new Object[]{
-                        Map.of("role", "system", "content", systemMessage),
-                        Map.of("role", "user", "content", naturalLanguageQuery)
-                }
-        );
+        // Construct request body
+        Map<String, Object> requestBody = getStringObjectMap(naturalLanguageQuery, systemMessage);
 
         return webClient.post()
                 .uri("/api/chat")
@@ -53,5 +44,34 @@ public class LLMService {
                 .map(parts -> String.join("", parts)) // Combine all parts into one query
                 .map(sql -> sql.replaceAll("```sql", "").replaceAll("```", "").trim()) // Cleanup formatting
                 .onErrorResume(e -> Mono.just("Error generating SQL query: " + e.getMessage()));
+    }
+
+    private static Map<String, Object> getStringObjectMap(String naturalLanguageQuery, String systemMessage) {
+        Map<String, Object> requestBody = Map.of(
+                "model", MODEL,
+                "temperature", 0,
+                "messages", new Object[]{
+                        Map.of("role", "system", "content", systemMessage),
+                        Map.of("role", "user", "content", naturalLanguageQuery)
+                }
+        );
+        return requestBody;
+    }
+
+    private String createSystemMessage(String schemaContext, String sampleData) {
+        return String.format(
+                """
+                        You are a SQL query generator. Given the following database schema:
+                        
+                        %s
+                        
+                        Here are some sample rows from the database:
+                        
+                        %s
+                        
+                        Generate an executable SQL query for MySQL based on the user's request. \
+                        Return ONLY the SQL query without any explanations or additional text.""",
+                schemaContext, sampleData
+        );
     }
 }
